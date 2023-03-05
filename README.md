@@ -21,3 +21,11 @@ Run client:
 ```sh
 make run_client SERVER_HOST=$(ipconfig getifaddr en0):8081
 ```
+
+
+
+### Why sha256?
+
+1. Its well known and widely used (in Bitcoin for example)
+2. Considered to be highly secure (not a signel collision found yet)
+3. Due its efficiency which can also be implemented in hardware
