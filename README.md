@@ -29,3 +29,9 @@ make run_client SERVER_HOST=$(ipconfig getifaddr en0):8081
 1. Its well known and widely used (in Bitcoin for example)
 2. Considered to be highly secure (not a signel collision found yet)
 3. Due its efficiency which can also be implemented in hardware
+
+
+### What can be improved in future?
+
+1. Add prometheus metrics to track how clients "struggle" to access service in terms of seconds dedicated to solve hash
+2. Dynamically adjust leading zeros difficulty in solving sha256 hash if connection count grows rapidly
