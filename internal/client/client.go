@@ -69,39 +69,27 @@ func solveChallenge(conn net.Conn) ([]byte, error) {
 	}
 
 	algo := arr[0]
-	fmt.Printf("Algo: %d\n ", algo)
 	diff := arr[1]
-	fmt.Printf("Difficulty: %d\n ", diff)
 	prefix := arr[2:7]
-	fmt.Println("prefix: " + string(prefix))
 
-	var nonce []byte
 	switch algo {
 	case proto.SHA256:
-		nonce = solveSHA256(diff, prefix)
+		return solveSHA256(diff, prefix)
 	default:
 		return nil, fmt.Errorf("Algo %d not supported", algo)
 	}
-
-	fmt.Println("nonce: " + string(nonce))
-	return nonce, nil
 }
 
-func solveSHA256(diff byte, prefix []byte) []byte {
+func solveSHA256(diff byte, prefix []byte) ([]byte, error) {
 	nonce := proto.RandSeq(5)
-	var count int
 	for {
-		count++
 		hash := sha256.Sum256(append(prefix, nonce...))
 		if proto.HasLeadingZeros(hash, int(diff)) {
-			// TODO: remove
-			fmt.Printf("Hash: %s\n", hash)
-			fmt.Printf("Solved in %d attempts\n", count)
-			return nonce
+			return nonce, nil
 		}
 		_, err := rand.Read(nonce)
 		if err != nil {
-			fmt.Println("err")
+			return nil, err
 		}
 	}
 }

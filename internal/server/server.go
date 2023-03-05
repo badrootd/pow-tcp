@@ -57,7 +57,6 @@ func handleConnection(conn net.Conn, errch chan<- error) {
 		errch <- err
 		return
 	}
-	fmt.Println("Sending prefix " + string(prefix))
 
 	var ok bool
 	ok, err = verify(conn, prefix)
@@ -96,8 +95,6 @@ func verify(conn net.Conn, prefix []byte) (bool, error) {
 	}
 
 	nonce := string(buf[:n])
-
-	fmt.Printf("nonce received: %s\n", nonce)
 
 	hash := sha256.Sum256(append(prefix, nonce...))
 	if proto.HasLeadingZeros(hash, proto.Difficulty) {
