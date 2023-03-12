@@ -9,8 +9,8 @@ build:
 	go build -o ./bin/client ./cmd/client/
 
 docker_build:
-	docker build -t pow-client -f docker/Dockerfile_client .
-	docker build -t pow-server -f docker/Dockerfile_server .
+	docker build --target=client -t pow-client -f docker/Dockerfile .
+	docker build --target=server -t pow-server -f docker/Dockerfile .
 
 run_client:
 	docker run --env SERVER_HOST=$(SERVER_HOST) pow-client
