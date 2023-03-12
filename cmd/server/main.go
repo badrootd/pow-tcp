@@ -21,13 +21,14 @@ func main() {
 		log.Error("Shutting down, failed to start server: %s", err)
 		return
 	}
+	defer srv.Close()
 	log.Info("Listening on %s", address)
 
 	errCh := make(chan error)
 
-	srv.LoopClient(errCh)
-
 	go handleErrors(errCh)
+
+	srv.LoopClient(errCh)
 }
 
 func handleErrors(errCh <-chan error) {
