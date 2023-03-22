@@ -9,6 +9,8 @@ import (
 	proto "pow-tcp/internal"
 )
 
+const nonceSize = 8
+
 type Server struct {
 	address  string
 	listener net.Listener
@@ -89,12 +91,13 @@ func challenge(conn net.Conn) ([]byte, error) {
 
 func verify(conn net.Conn, prefix []byte) (bool, error) {
 	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
+	_, err := conn.Read(buf)
 	if err != nil {
 		return false, err
 	}
 
-	nonce := string(buf[:n])
+	// nonce takes 8 bytes
+	nonce := buf[:nonceSize]
 
 	hash := sha256.Sum256(append(prefix, nonce...))
 	if proto.HasLeadingZeros(hash, proto.Difficulty) {

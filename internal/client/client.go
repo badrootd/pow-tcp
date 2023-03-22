@@ -1,22 +1,34 @@
 package client
 
 import (
+	crand "crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
+	"math"
+	"math/big"
 	"math/rand"
 	"net"
 	proto "pow-tcp/internal"
+	"time"
 )
 
 type Client struct {
 	address string
 	conn    net.Conn
+	rand    *rand.Rand
 }
 
-func NewClient(address string) Client {
+func NewClient(address string) (Client, error) {
+	seed, err := crand.Int(crand.Reader, big.NewInt(math.MaxInt64))
+	if err != nil {
+		return Client{}, err
+	}
+	r := rand.New(rand.NewSource(seed.Int64()))
 	return Client{
 		address: address,
-	}
+		rand:    r,
+	}, nil
 }
 
 func (c *Client) Connect() error {
@@ -27,16 +39,18 @@ func (c *Client) Connect() error {
 
 	c.conn = dial
 
-	nonce, err := solveChallenge(c.conn)
+	nonce, err := c.solveChallenge(c.conn)
 	if err != nil {
 		return err
 	}
 
-	if nonce == nil {
+	if err != nil {
 		return fmt.Errorf("Failed to solve challenge")
 	}
 
-	_, err = c.conn.Write(nonce)
+	nonceBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(nonceBytes, nonce)
+	_, err = c.conn.Write(nonceBytes)
 	if err != nil {
 		return err
 	}
@@ -61,11 +75,11 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func solveChallenge(conn net.Conn) ([]byte, error) {
+func (c *Client) solveChallenge(conn net.Conn) (uint64, error) {
 	arr := make([]byte, 1024)
 	_, err := conn.Read(arr)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	algo := arr[0]
@@ -74,22 +88,27 @@ func solveChallenge(conn net.Conn) ([]byte, error) {
 
 	switch algo {
 	case proto.SHA256:
-		return solveSHA256(diff, prefix)
+		return c.solveSHA256(diff, prefix)
 	default:
-		return nil, fmt.Errorf("Algo %d not supported", algo)
+		return 0, fmt.Errorf("Algo %d not supported", algo)
 	}
 }
 
-func solveSHA256(diff byte, prefix []byte) ([]byte, error) {
-	nonce := proto.RandSeq(5)
+func (c *Client) solveSHA256(diff byte, prefix []byte) (uint64, error) {
+	nonce := c.rand.Uint64()
+	nonceBytes := make([]byte, 8)
+	timeout := time.After(time.Second * 10)
 	for {
-		hash := sha256.Sum256(append(prefix, nonce...))
-		if proto.HasLeadingZeros(hash, int(diff)) {
-			return nonce, nil
-		}
-		_, err := rand.Read(nonce)
-		if err != nil {
-			return nil, err
+		select {
+		case <-timeout:
+			return 0, fmt.Errorf("timed out finding nonce")
+		default:
+			binary.LittleEndian.PutUint64(nonceBytes, nonce)
+			hash := sha256.Sum256(append(prefix, nonceBytes...))
+			if proto.HasLeadingZeros(hash, int(diff)) {
+				return nonce, nil
+			}
+			nonce++
 		}
 	}
 }

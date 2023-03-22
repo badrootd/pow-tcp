@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-const address = ":8081"
+const (
+	address   = ":8081"
+	errChSize = 1024
+)
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -24,7 +27,7 @@ func main() {
 	defer srv.Close()
 	log.Info("Listening on %s", address)
 
-	errCh := make(chan error)
+	errCh := make(chan error, errChSize)
 
 	go handleErrors(errCh)
 

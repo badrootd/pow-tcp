@@ -15,10 +15,14 @@ func main() {
 	}
 
 	log.Info("Connecting to %s", host)
-	c := client.NewClient(host)
+	c, err := client.NewClient(host)
+	if err != nil {
+		log.Errorf("Error creating client:", err)
+		return
+	}
 
-	if err := c.Connect(); err != nil {
-		log.Errorf("Error connecting server:", err)
+	if err = c.Connect(); err != nil {
+		log.Errorf("Error connecting to server:", err)
 		return
 	}
 
