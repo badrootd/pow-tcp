@@ -18,7 +18,7 @@ func Test_Integration(t *testing.T) {
 	errCh := make(chan error)
 	go srv.LoopClient(errCh)
 
-	c := client.NewClient(address)
+	c, _ := client.NewClient(address)
 
 	_ = c.Connect()
 
